@@ -116,11 +116,7 @@ export const initializePinecone = async () => {
         apiKey: process.env.PINECONE_API_KEY!,
     });
 
-    // await pinecone.init({
-    //   environment: "YOUR_ENVIRONMENT", // Replace with your Pinecone environment
-    //   apiKey: "YOUR_API_KEY", // Replace with your Pinecone API key
-    // });
-    return pinecone.Index("youtube-content");
+    return pinecone.Index(process.env.PINECONE_INDEX!);
 };
 export const preprocessTranscript = async (
     transcript: transcriptInterface[],

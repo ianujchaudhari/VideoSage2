@@ -6,8 +6,8 @@ import { v4 as uuid } from "uuid";
 
 // These imports match your original route's transcript & embedding logic
 import {
-  fetchTranscript2,
-  // fetchTranscripts,
+  // fetchTranscript2,
+  fetchTranscripts,
   generateEmbeddings,
   initializePinecone,
   preprocessTranscript,
@@ -126,8 +126,8 @@ export async function POST(req: NextRequest) {
 
     // Fetch transcripts from your existing utility
     console.log("Fetching transcripts started");
-    const transcript: transcriptInterface[] | null = await fetchTranscript2(
-      youtube_url
+    const transcript: transcriptInterface[] | null = await fetchTranscripts(
+      videoId
     );
     console.log("Transcript fetched");
       if (!transcript || transcript.length === 0) {
