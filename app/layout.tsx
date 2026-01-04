@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/hooks/auth-provider";
 import { Header } from "@/components/header";
 import { SpacesProvider } from "@/hooks/space-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ export default function RootLayout({
                 </div>
               </div>
             </SpacesProvider>
+            <Toaster />
           </AuthProvider>
         </ThemeProvider>
       </body>

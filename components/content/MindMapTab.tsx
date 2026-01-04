@@ -28,10 +28,7 @@ interface MindMapData {
   }[];
 }
 
-export default function MindMapTab({
-  value,
-  activeMainTab,
-}: MindMapTabProps) {
+export default function MindMapTab({ value, activeMainTab }: MindMapTabProps) {
   const [mindMapData, setMindMapData] = useState<MindMapData | null>(null);
   const [youtube_id, setYoutubeId] = useState<string>("");
   const [content_id, setContentId] = useState<string>("");
@@ -42,11 +39,12 @@ export default function MindMapTab({
   const { user } = useAuth();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
+    if (typeof window === "undefined") return;
+    if (activeMainTab !== value) return; // Lazy load: only fetch if active
+
     // Find the content across all spaces
     for (const space of spaces) {
-      const content = space.contents?.find(content => content.id === id);
+      const content = space.contents?.find((content) => content.id === id);
       if (content) {
         setYoutubeId(content.youtube_id);
         setContentId(content.id);
@@ -63,13 +61,12 @@ export default function MindMapTab({
             `/api/generate/mindmap?video_id=${youtube_id}&content_id=${content_id}`,
             {
               headers: {
-                authorization: user?.token
-              }
+                authorization: user?.token,
+              },
             }
           );
           const data = await response?.data;
           if (data) {
-            // @ts-expect-error data.data type is unknown
             setMindMapData(data.data);
           }
         } catch (error) {
@@ -82,7 +79,7 @@ export default function MindMapTab({
 
       fetchMindMap();
     }
-  }, [spaces, id, youtube_id, content_id, user?.token]);
+  }, [spaces, id, youtube_id, content_id, activeMainTab, value, user?.token]);
 
   // Initialize the diagram
   function initDiagram() {
@@ -92,67 +89,87 @@ export default function MindMapTab({
       layout: $(go.TreeLayout, {
         angle: 90,
         layerSpacing: 35,
-        alignment: go.TreeLayout.AlignmentStart
+        alignment: go.TreeLayout.AlignmentStart,
       }),
       model: $(go.GraphLinksModel, {
-        linkKeyProperty: "key"
-      })
+        linkKeyProperty: "key",
+      }),
     });
- 
+
     // @ts-expect-error diagram.background type is unknown
     diagram.background = "white";
 
     // Define node templates for different categories
-    const rootTemplate = $(go.Node, "Auto",
-      $(go.Shape, "RoundedRectangle", { 
+    const rootTemplate = $(
+      go.Node,
+      "Auto",
+      $(go.Shape, "RoundedRectangle", {
         fill: "#2196F3",
-        stroke: "black" 
+        stroke: "black",
       }),
-      $(go.TextBlock, { 
-        margin: 8, 
-        stroke: "white",
-        font: "14px sans-serif"
-      },
-        new go.Binding("text", "text"))
+      $(
+        go.TextBlock,
+        {
+          margin: 8,
+          stroke: "white",
+          font: "14px sans-serif",
+        },
+        new go.Binding("text", "text")
+      )
     );
 
-    const sectionTemplate = $(go.Node, "Auto",
-      $(go.Shape, "RoundedRectangle", { 
+    const sectionTemplate = $(
+      go.Node,
+      "Auto",
+      $(go.Shape, "RoundedRectangle", {
         fill: "#4CAF50",
-        stroke: "black"
+        stroke: "black",
       }),
-      $(go.TextBlock, { 
-        margin: 8,
-        stroke: "white",
-        font: "14px sans-serif"
-      },
-        new go.Binding("text", "text"))
+      $(
+        go.TextBlock,
+        {
+          margin: 8,
+          stroke: "white",
+          font: "14px sans-serif",
+        },
+        new go.Binding("text", "text")
+      )
     );
 
-    const topicTemplate = $(go.Node, "Auto",
-      $(go.Shape, "RoundedRectangle", { 
+    const topicTemplate = $(
+      go.Node,
+      "Auto",
+      $(go.Shape, "RoundedRectangle", {
         fill: "#FF9800",
-        stroke: "black"
+        stroke: "black",
       }),
-      $(go.TextBlock, { 
-        margin: 8,
-        stroke: "white",
-        font: "14px sans-serif"
-      },
-        new go.Binding("text", "text"))
+      $(
+        go.TextBlock,
+        {
+          margin: 8,
+          stroke: "white",
+          font: "14px sans-serif",
+        },
+        new go.Binding("text", "text")
+      )
     );
 
-    const subtopicTemplate = $(go.Node, "Auto",
-      $(go.Shape, "RoundedRectangle", { 
+    const subtopicTemplate = $(
+      go.Node,
+      "Auto",
+      $(go.Shape, "RoundedRectangle", {
         fill: "#9C27B0",
-        stroke: "black"
+        stroke: "black",
       }),
-      $(go.TextBlock, { 
-        margin: 8,
-        stroke: "white",
-        font: "14px sans-serif"
-      },
-        new go.Binding("text", "text"))
+      $(
+        go.TextBlock,
+        {
+          margin: 8,
+          stroke: "white",
+          font: "14px sans-serif",
+        },
+        new go.Binding("text", "text")
+      )
     );
 
     diagram.nodeTemplateMap.add("root", rootTemplate);
@@ -160,20 +177,24 @@ export default function MindMapTab({
     diagram.nodeTemplateMap.add("topic", topicTemplate);
     diagram.nodeTemplateMap.add("subtopic", subtopicTemplate);
 
-    diagram.linkTemplate =
-      $(go.Link,
-        { routing: go.Link.Orthogonal },
-        $(go.Shape, { 
-          strokeWidth: 1.5,
-          stroke: "black"
-        })
-      );
+    diagram.linkTemplate = $(
+      go.Link,
+      { routing: go.Link.Orthogonal },
+      $(go.Shape, {
+        strokeWidth: 1.5,
+        stroke: "black",
+      })
+    );
 
     return diagram;
   }
 
   return (
-    <TabsContent value={value} className="flex-1 min-h-0 overflow-hidden mt-4" suppressHydrationWarning>
+    <TabsContent
+      value={value}
+      className="flex-1 min-h-0 overflow-hidden mt-4"
+      suppressHydrationWarning
+    >
       {activeMainTab === value && (
         <Card className="h-full flex flex-col p-6 min-h-0">
           <div className="relative flex-1 rounded-lg border bg-white dark:bg-white overflow-hidden">

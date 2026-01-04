@@ -15,23 +15,22 @@ interface SummaryTabProps {
   activeMainTab: string;
 }
 
-export default function SummaryTab({
-  value,
-  activeMainTab,
-}: SummaryTabProps) {
+export default function SummaryTab({ value, activeMainTab }: SummaryTabProps) {
   const { id } = useParams();
   const { spaces } = useSpaces();
   const [isLoading, setIsLoading] = useState(false);
   const [youtube_id, setYoutubeId] = useState<string>("");
   const [content_id, setContentId] = useState<string>("");
   const [summaryData, setSummaryData] = useState("");
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   useEffect(() => {
-    setIsLoading(true)
+    if (activeMainTab !== value) return; // Only fetch if this tab is active
+
+    setIsLoading(true);
     // Find the content across all spaces
     for (const space of spaces) {
-      const content = space.contents?.find(content => content.id === id);
+      const content = space.contents?.find((content) => content.id === id);
       if (content) {
         setYoutubeId(content.youtube_id);
         setContentId(content.id);
@@ -42,14 +41,16 @@ export default function SummaryTab({
     if (youtube_id && content_id) {
       async function fetchData() {
         try {
-          const response = await axios.get(`/api/generate/summary?video_id=${youtube_id}&content_id=${content_id}`, {
-            headers: {
-              authorization: user?.token
+          const response = await axios.get(
+            `/api/generate/summary?video_id=${youtube_id}&content_id=${content_id}`,
+            {
+              headers: {
+                authorization: user?.token,
+              },
             }
-          });
+          );
 
           if (response?.data) {
-            // @ts-expect-error response.data.data type is unknown
             setSummaryData(response?.data?.data);
           }
         } catch (error) {
@@ -61,8 +62,7 @@ export default function SummaryTab({
 
       fetchData();
     }
-
-  }, [spaces, id, youtube_id, content_id, user?.token]);
+  }, [spaces, id, youtube_id, content_id, activeMainTab, value, user?.token]);
 
   return (
     <TabsContent value={value} className="flex-1 min-h-0 overflow-hidden mt-4">

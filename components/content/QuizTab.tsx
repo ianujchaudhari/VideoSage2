@@ -23,26 +23,25 @@ interface QuizTabProps {
   activeMainTab: string;
 }
 
-export default function QuizTab({
-  value,
-  activeMainTab,
-}: QuizTabProps) {
+export default function QuizTab({ value, activeMainTab }: QuizTabProps) {
   const { id } = useParams();
   const { spaces } = useSpaces();
   const [isLoading, setIsLoading] = useState(false);
   const [youtube_id, setYoutubeId] = useState<string>("");
   const [content_id, setContentId] = useState<string>("");
   const [quizData, setQuizData] = useState<QuizQuestion[]>([]);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<number, number>
+  >({});
   const { user } = useAuth();
 
   useEffect(() => {
     if (activeMainTab !== value) return; // Only proceed if this tab is active
-    
+
     setIsLoading(true);
     // Find the content across all spaces
     for (const space of spaces) {
-      const content = space.contents?.find(content => content.id === id);
+      const content = space.contents?.find((content) => content.id === id);
       if (content) {
         setYoutubeId(content.youtube_id);
         setContentId(content.id);
@@ -53,15 +52,16 @@ export default function QuizTab({
     if (youtube_id && content_id) {
       async function fetchData() {
         try {
-          const response = await axios.get(`/api/generate/quiz?video_id=${youtube_id}&content_id=${content_id}`, {
-            headers: {
-              authorization: user?.token
+          const response = await axios.get(
+            `/api/generate/quiz?video_id=${youtube_id}&content_id=${content_id}`,
+            {
+              headers: {
+                authorization: user?.token,
+              },
             }
-          });
-          
-          // @ts-expect-error response.data.data type is unknown
+          );
+
           if (response?.data?.data?.questions) {
-            // @ts-expect-error response.data.data.questions type is unknown
             setQuizData(response.data.data.questions);
           }
         } catch (error) {
@@ -76,9 +76,9 @@ export default function QuizTab({
   }, [spaces, id, youtube_id, content_id, activeMainTab, value, user?.token]);
 
   const handleAnswerSelect = (qIndex: number, oIndex: number) => {
-    setSelectedAnswers(prev => ({
+    setSelectedAnswers((prev) => ({
       ...prev,
-      [qIndex]: oIndex
+      [qIndex]: oIndex,
     }));
   };
 
@@ -117,22 +117,25 @@ export default function QuizTab({
                         </Button>
                       ))}
                     </div>
-                    {selectedAnswers[qIndex] !== undefined && 
-                      question.options[selectedAnswers[qIndex]] === question.correct_option && (
-                      <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                        <p className="text-sm text-green-600 dark:text-green-400">
-                          Correct! {question.explanation}
-                        </p>
-                      </div>
-                    )}
                     {selectedAnswers[qIndex] !== undefined &&
-                      question.options[selectedAnswers[qIndex]] !== question.correct_option && (
-                      <div className="rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                          Try again! Review the related section in the video at {question.timestamp}.
-                        </p>
-                      </div>
-                    )}
+                      question.options[selectedAnswers[qIndex]] ===
+                        question.correct_option && (
+                        <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            Correct! {question.explanation}
+                          </p>
+                        </div>
+                      )}
+                    {selectedAnswers[qIndex] !== undefined &&
+                      question.options[selectedAnswers[qIndex]] !==
+                        question.correct_option && (
+                        <div className="rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
+                          <p className="text-sm text-red-600 dark:text-red-400">
+                            Try again! Review the related section in the video
+                            at {question.timestamp}.
+                          </p>
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>

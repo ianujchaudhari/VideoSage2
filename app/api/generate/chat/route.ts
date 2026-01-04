@@ -10,7 +10,7 @@ const google = createGoogleGenerativeAI({
     apiKey: process.env.GEMINI_API_KEY
 })
 
-const model = google.languageModel("gemini-1.5-flash")
+const model = google.languageModel("gemini-3-flash-preview")
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY! })
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
             // Simplified search query
             const searchQuery = userQuestion;
             console.log("searchQuery", searchQuery);
-            retrievals = await queryPineconeVectorStore(pc, "youtube-content", "videosage-namespace-3", video_id, searchQuery);
+            retrievals = await queryPineconeVectorStore(pc, process.env.PINECONE_INDEX!, "videosage-namespace-3", video_id, searchQuery);
             console.log(retrievals);
             console.log("Successfully retrieved context from vector store");
         } catch (retrievalError) {

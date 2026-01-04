@@ -40,10 +40,12 @@ export default function FlashcardsTab({
   const { user } = useAuth();
 
   useEffect(() => {
+    if (activeMainTab !== value) return; // Lazy load: only fetch if tab is active
+
     setIsLoading(true);
     // Find the content across all spaces
     for (const space of spaces) {
-      const content = space.contents?.find(content => content.id === id);
+      const content = space.contents?.find((content) => content.id === id);
       if (content) {
         setYoutubeId(content.youtube_id);
         setContentId(content.id);
@@ -54,15 +56,16 @@ export default function FlashcardsTab({
     if (youtube_id && content_id) {
       async function fetchData() {
         try {
-          const response = await axios.get(`/api/generate/flashcard?video_id=${youtube_id}&content_id=${content_id}`, {
-            headers: {
-              authorization: user?.token
+          const response = await axios.get(
+            `/api/generate/flashcard?video_id=${youtube_id}&content_id=${content_id}`,
+            {
+              headers: {
+                authorization: user?.token,
+              },
             }
-          });
-          
-          // @ts-expect-error Response type is not properly defined
+          );
+
           if (response?.data?.data?.flashcards) {
-            // @ts-expect-error Response type is not properly defined
             setFlashcards(response.data.data.flashcards);
           }
         } catch (error) {
@@ -74,7 +77,7 @@ export default function FlashcardsTab({
 
       fetchData();
     }
-  }, [spaces, id, youtube_id, content_id, user?.token]);
+  }, [spaces, id, youtube_id, content_id, activeMainTab, value, user?.token]);
 
   const resetCard = () => {
     setShowHint(false);
@@ -100,14 +103,16 @@ export default function FlashcardsTab({
               <div className="relative flex-1">
                 {flashcards.length > 0 && (
                   <div className="relative w-full h-full">
-                    <div 
+                    <div
                       className={`absolute inset-0 rounded-xl border bg-card p-6 transition-all duration-500 ${
-                        showAnswer ? "[transform:rotateY(180deg)] pointer-events-none" : ""
+                        showAnswer
+                          ? "[transform:rotateY(180deg)] pointer-events-none"
+                          : ""
                       }`}
                       style={{
                         transformStyle: "preserve-3d",
                         backfaceVisibility: "hidden",
-                        WebkitBackfaceVisibility: "hidden"
+                        WebkitBackfaceVisibility: "hidden",
                       }}
                       onClick={() => !showAnswer && setShowAnswer(true)}
                     >
@@ -115,8 +120,8 @@ export default function FlashcardsTab({
                         <p className="text-xl font-medium">
                           {flashcards[currentFlashcard].question}
                         </p>
-                        
-                        <Button 
+
+                        <Button
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -134,21 +139,23 @@ export default function FlashcardsTab({
                       </div>
                     </div>
 
-                    <div 
+                    <div
                       className={`absolute inset-0 rounded-xl border bg-card p-6 transition-all duration-500 [transform:rotateY(-180deg)] ${
-                        showAnswer ? "[transform:rotateY(0deg)]" : "pointer-events-none"
+                        showAnswer
+                          ? "[transform:rotateY(0deg)]"
+                          : "pointer-events-none"
                       }`}
                       style={{
                         transformStyle: "preserve-3d",
                         backfaceVisibility: "hidden",
-                        WebkitBackfaceVisibility: "hidden"
+                        WebkitBackfaceVisibility: "hidden",
                       }}
                     >
                       <div className="text-center space-y-4">
                         <p className="text-lg">
                           {flashcards[currentFlashcard].answer}
                         </p>
-                        
+
                         <Button
                           variant="outline"
                           onClick={() => setShowExplanation(true)}
@@ -172,11 +179,7 @@ export default function FlashcardsTab({
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={nextCard}
-                >
+                <Button variant="outline" size="icon" onClick={nextCard}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
                 <div className="text-sm text-muted-foreground">

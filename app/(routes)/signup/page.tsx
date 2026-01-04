@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowRight, Mail, User, Lock, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,9 +55,15 @@ export default function SignUp() {
         password: formData.password,
       });
 
+      toast.success("Account created successfully!");
       router.push("/dashboard");
-    } catch (error) {
-      console.error("Signup failed:", error);
+    } catch (err: unknown) {
+      console.error("Signup failed:", err);
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -104,7 +111,7 @@ export default function SignUp() {
                     <Input
                       id="username"
                       name="username"
-                      type="username"
+                      type="email"
                       placeholder="you@example.com"
                       required
                       value={formData.username}

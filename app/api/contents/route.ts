@@ -52,7 +52,9 @@ export async function POST(req: NextRequest) {
     const token = authHeader.replace("Bearer ", "");
     let decoded: { user_id?: string };
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!) as { user_id?: string };
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        user_id?: string;
+      };
       // Replace "secret_key" with your real JWT secret or env var
     } catch (err) {
       console.error("JWT verification failed:", err);
@@ -91,33 +93,45 @@ export async function POST(req: NextRequest) {
     }
 
     // ----------------------------------------------------------------------
-    // 3) If no space_id, find or create a "Default" space for this user
+    // 3) If no space_id or invalid space_id, find or create a "Default" space for this user
     // ----------------------------------------------------------------------
-    if (!spaceId) {
-      let defaultSpace = await prisma.space.findFirst({
+    let space = null;
+    if (spaceId) {
+      space = await prisma.space.findFirst({
+        where: {
+          space_id: spaceId,
+          user_id: userId,
+        },
+      });
+    }
+
+    if (!space) {
+      space = await prisma.space.findFirst({
         where: {
           user_id: userId,
           space_name: "Default",
         },
       });
 
-      if (!defaultSpace) {
-        defaultSpace = await prisma.space.create({
+      if (!space) {
+        space = await prisma.space.create({
           data: {
             user_id: userId,
             space_name: "Default",
           },
         });
       }
-      spaceId = defaultSpace.space_id;
     }
+    spaceId = space.space_id;
 
     // ----------------------------------------------------------------------
     // 4) Determine the YouTube video ID & fetch transcripts
     // ----------------------------------------------------------------------
     const videoId = extractYoutubeId(youtube_url);
     if (!videoId) {
-      console.log("Could not extract valid video ID from youtube_url");
+      console.log(
+        "[ContentAPI] Could not extract valid video ID from youtube_url"
+      );
       return NextResponse.json(
         { error: "Could not extract valid video ID from youtube_url" },
         { status: 400 }
@@ -125,29 +139,50 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch transcripts from your existing utility
-    console.log("Fetching transcripts started");
-    const transcript: transcriptInterface[] | null = await fetchTranscripts(
-      videoId
+    console.log(
+      `[ContentAPI] Fetching transcripts started for video: ${videoId}`
     );
-    console.log("Transcript fetched");
-      if (!transcript || transcript.length === 0) {
-        console.log("Error extracting transcripts or no transcripts found");
-        return NextResponse.json(
-          { error: "Error extracting transcripts or no transcripts found" },
-          { status: 400 }
+    let transcript: transcriptInterface[] | null = null;
+    try {
+      transcript = await fetchTranscripts(videoId);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[ContentAPI] Error fetching transcripts: ${message}`);
+      return NextResponse.json(
+        { error: `Failed to fetch transcript: ${message}` },
+        { status: 400 }
+      );
+    }
+
+    console.log("[ContentAPI] Transcript fetched successfully");
+    if (!transcript || transcript.length === 0) {
+      console.log(
+        "[ContentAPI] Error extracting transcripts or no transcripts found (empty)"
+      );
+      return NextResponse.json(
+        { error: "Error extracting transcripts or no transcripts found" },
+        { status: 400 }
       );
     }
 
     // ----------------------------------------------------------------------
     // 5) Fetch YouTube metadata (title, description, thumbnail, etc.)
     // ----------------------------------------------------------------------
-    console.log("Fetching metadata started");
+    console.log("[ContentAPI] Fetching metadata started");
     const metadataResponse = await axios.get(
       `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${process.env.YOUTUBE_APIKEY}`
     );
-    const metadata = metadataResponse.data as { items: { snippet: { title: string; description: string; thumbnails: { standard: { url: string } } } }[] };
+    const metadata = metadataResponse.data as {
+      items: {
+        snippet: {
+          title: string;
+          description: string;
+          thumbnails: { standard: { url: string } };
+        };
+      }[];
+    };
     if (!metadata.items || metadata.items.length === 0) {
-      console.log("Could not fetch YouTube video metadata");
+      console.log("[ContentAPI] Could not fetch YouTube video metadata");
       return NextResponse.json(
         { error: "Could not fetch YouTube video metadata" },
         { status: 404 }
@@ -157,7 +192,7 @@ export async function POST(req: NextRequest) {
     const videoTitle = snippet.title || "Untitled";
     const videoDescription = snippet.description || "";
     const videoThumbnail = snippet?.thumbnails?.standard?.url || "";
-    console.log("Metadata fetched");
+    console.log("[ContentAPI] Metadata fetched");
     // ----------------------------------------------------------------------
     // 6) Check if we already have a YoutubeContent for this videoId
     //    => If yes, reuse that content_id
@@ -174,7 +209,7 @@ export async function POST(req: NextRequest) {
 
     // Processed transcript chunks (for embedding)
     const processedTranscriptChunks = await preprocessTranscript(transcript);
-    console.log("Transcript processed");
+    console.log("[ContentAPI] Transcript processed");
     // ----------------------------------------------------------------------
     // 7) If existing, reuse the content_id. Otherwise, create new.
     // ----------------------------------------------------------------------
@@ -273,7 +308,7 @@ export async function POST(req: NextRequest) {
     //     status: "success",
     //     data: { space_id, content_id, type, title, thumbnail_url },
     //   }
-    
+
     // We'll respond with 200 either way (new or existing).
     return NextResponse.json(
       {

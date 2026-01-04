@@ -8,6 +8,7 @@ import { CreateSpaceDialog } from "@/components/create-space-dialog";
 import { Box, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /**
  * Now we rely on the spaces fetched in RootLayout.
@@ -45,7 +46,10 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({ name }),
       });
-      if (!res.ok) throw new Error("Failed to create space");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create space");
+      }
       const created = await res.json(); // { id, name, createdAt }
       addSpace({
         id: created.id,
@@ -53,8 +57,11 @@ export default function DashboardPage() {
         createdAt: created.createdAt,
         contents: [], // new space has empty content
       });
-    } catch (error) {
+      toast.success("Space created successfully!");
+    } catch (error: unknown) {
       console.error(error);
+      const message = error instanceof Error ? error.message : "Failed to create space. Please try again.";
+      toast.error(message);
     }
   }
 

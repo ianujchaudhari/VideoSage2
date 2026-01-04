@@ -34,22 +34,16 @@ export async function GET(req: NextRequest) {
             )
         }
 
-        const existingMetadata = await prisma.metadata.findUnique({
+        const existingMetadata = await prisma.metadata.upsert({
             where: {
                 youtube_id: video_id
+            },
+            update: {},
+            create: {
+                metadata_id: uuid(),
+                youtube_id: video_id,
             }
         })
-
-        if (!existingMetadata) {
-            await prisma.metadata.create({
-                data: {
-                    metadata_id: uuid(),
-                    youtube_id: video_id,
-                    created_at: new Date(),
-                    updated_at: new Date()
-                }
-            })
-        }
 
         if (!existingMetadata?.flashcards) {
             const youtubeData = await prisma.youtubeContent.findUnique(

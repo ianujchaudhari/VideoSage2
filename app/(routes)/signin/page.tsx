@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import axios from "axios";
 import { useAuth } from "@/hooks/auth-provider";
+import { toast } from "sonner";
 
 interface DecodedToken {
   user_id: string;
@@ -75,10 +76,16 @@ export default function SignIn() {
           token,
         });
 
+        toast.success("Signed in successfully!");
         router.push("/dashboard");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error during sign-in:", error);
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Sign in failed. Please check your credentials.");
+      }
     }
   };
 
