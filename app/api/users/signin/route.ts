@@ -38,11 +38,13 @@ export async function POST(req: NextRequest) {
 
     console.log("[Signin API] Validating body for:", body.username);
     const validatedBody = signinValidation(body);
-    const { username, password } = validatedBody;
-
-    console.log("[Signin API] Checking database connection...");
-    let user;
-    try {
+            const { username, password } = validatedBody;
+    
+            console.log("[Signin API] Checking database connection...");
+            const dbUrl = process.env.DATABASE_URL || "";
+            console.log("[Signin API] DB Host Snippet:", dbUrl.split("@")[1]?.split(":")[0] || "unknown");
+            
+            let user;    try {
       user = await prisma.user.findUnique({
         where: { username },
       });
