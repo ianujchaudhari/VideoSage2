@@ -2,10 +2,8 @@ import { signinValidation } from "@/validations/userValidation";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
-
-const SECRETKEY = process.env.JWT_SECRET!;
 
 interface signinBody {
     username: string,
@@ -13,6 +11,12 @@ interface signinBody {
 }
 export async function POST(req: NextRequest) {
     try {
+        const SECRETKEY = process.env.JWT_SECRET;
+        if (!SECRETKEY) {
+            console.error("JWT_SECRET is not defined in environment variables");
+            return NextResponse.json({ message: "Internal Server Error (Configuration)" }, { status: 500 });
+        }
+
         const body: signinBody = await req.json();
         const validatedBody = signinValidation(body);
 
@@ -67,9 +71,9 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        console.error("Error while signing in:", error instanceof Error ? error.message : 'Unknown error');
+        console.error("Error while signing in:", error);
         return NextResponse.json(
-            { message: "Error while signin"},
+            { message: "Error while signin", details: error instanceof Error ? error.message : "Unknown error" },
             { status: 500 }
         )
     }

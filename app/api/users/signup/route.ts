@@ -2,7 +2,7 @@ import { signupValidation } from "@/validations/userValidation";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        console.error("Error while signing up:", error instanceof Error ? error.message : 'Unknown error');
+        console.error("Error while signing up:", error);
         return NextResponse.json(
-            { message: "Internal Server Error"}, { status: 500 }
+            { message: "Internal Server Error", details: error instanceof Error ? error.message : "Unknown error" }, { status: 500 }
         )
     }
 }
